@@ -1,0 +1,3 @@
+[submodule "kinetic"]
+	path = kinetic
+	url = git@github.com:someonelse20/kinetic.git
