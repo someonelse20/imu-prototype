@@ -44,14 +44,6 @@ uint8_t lsm_init(lsm9ds1_t *lsm9ds1) {
 	buf[1] = 0b0100000;
 	i2c_write_blocking(i2c_default, lsm9ds1->ADDR, buf, 2, false);
 
-	uint8_t reg = WHO_AM_I_XG;
-	uint8_t who_am_i;
-
-	i2c_write_blocking(i2c_default, lsm9ds1->ADDR, &reg, 1, true);
-	i2c_read_blocking(i2c_default, lsm9ds1->ADDR, &who_am_i, 1, false);
-
-	printf("%i\n", who_am_i);
-
 	return 0;
 }
 

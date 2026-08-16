@@ -13,7 +13,7 @@ pico_sdk_init()
 
 include_directories(${CMAKE_SOURCE_DIR}/inc)
 
-add_library(libimu STATIC src/lsm9ds1.c)
+add_library(libimu STATIC src/lsm9ds1.c src/ssd1306.c)
 target_include_directories(libimu PUBLIC ${CMAKE_SOURCE_DIR}/inc)
 target_link_libraries(libimu pico_stdlib hardware_i2c)
 
@@ -26,6 +26,7 @@ add_executable(bus_scan
 	bus_scan.c
 )
 target_link_libraries(bus_scan pico_stdlib hardware_i2c)
+
 
 pico_enable_stdio_usb(imu 1)
 pico_enable_stdio_uart(imu 1)
