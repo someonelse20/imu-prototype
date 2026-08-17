@@ -17,10 +17,13 @@ add_library(libimu STATIC src/lsm9ds1.c src/ssd1306.c)
 target_include_directories(libimu PUBLIC ${CMAKE_SOURCE_DIR}/inc)
 target_link_libraries(libimu pico_stdlib hardware_i2c)
 
+set(KINETIC_PATH kinetic)
+include(kinetic/kinetic_import.cmake)
+
 add_executable(imu
 	main.c
 )
-target_link_libraries(imu libimu pico_stdlib hardware_adc)
+target_link_libraries(imu libimu kinetic pico_stdlib hardware_adc)
 
 add_executable(bus_scan
 	bus_scan.c

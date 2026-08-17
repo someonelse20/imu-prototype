@@ -1,4 +1,6 @@
 #include "hardware/adc.h"
+#include "kin_math.h"
+#include "kin_types.h"
 #include "pico/stdlib.h"
 #include <pico/time.h>
 #include <string.h>
@@ -7,6 +9,7 @@
 
 #include "lsm9ds1.h"
 #include "ssd1306.h"
+#include "kin_imu.h"
 
 void render_imu(struct render_area *frame_area, float *val);
 
@@ -15,9 +18,10 @@ float get_bat_volt();
 char* concat(const char *s1, const char *s2);
 
 int main() {
-	lsm9ds1_t imu;
-	imu.ADDR = 0x6B;
-	imu.MAG_ADDR= 0x1E;
+	// Init IMU type.
+	lsm9ds1_t lsm9ds1;
+	lsm9ds1.ADDR = 0x6B;
+	lsm9ds1.MAG_ADDR= 0x1E;
 
 	setup_default_uart();
 	stdio_init_all();
@@ -30,7 +34,7 @@ int main() {
 
 	// Init IMU.
 	sleep_ms(10);
-	uint8_t val = lsm_init(&imu);
+	uint8_t val = lsm_init(&lsm9ds1);
 	sleep_ms(10);
 
 	// Init OLED.
@@ -51,6 +55,21 @@ int main() {
 	memset(buf, 0, SSD1306_BUF_LEN);
 	render(buf, &frame_area);
 
+	// Init kinetic.
+	imu_t imu;
+
+	imu.mag_dip = 0.000001;
+	imu.gyro_noise = 0.3;
+	imu.accel_noise = 0.5;
+	imu.mag_noise = 0.8;
+
+	float accel[3];
+	float mag[3];
+	read_accel(&lsm9ds1, accel);
+	read_mag(&lsm9ds1, mag);
+
+	imu_init(&imu, accel, mag);
+
 	while (1) {
 		float bat_volt = get_bat_volt();
 
@@ -58,20 +77,14 @@ int main() {
 		float accel[3];
 		float mag[3];
 
-		read_gyro(&imu, gyro);
-		read_accel(&imu, accel);
-		read_mag(&imu, mag);
+		read_gyro(&lsm9ds1, gyro);
+		read_accel(&lsm9ds1, accel);
+		read_mag(&lsm9ds1, mag);
 
-		/*
-		   printf("mag: ");
-		   for (int i = 0; i < 3; i++) {
-		        printf("%f, ", mag[i]);
-		   }
-		   printf("\n");
-		   printf("%i\n", val);
-		 */
+		imu_update(&imu, gyro, accel, mag);
+		float *orientation = matrix_to_arr(quat_to_euler(imu.ekf.state));
 
-		render_imu(&frame_area, gyro);
+		render_imu(&frame_area, orientation);
 
 		sleep_ms(100);
 	}
