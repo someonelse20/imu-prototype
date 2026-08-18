@@ -62,6 +62,7 @@ int main() {
 	imu.gyro_noise = 0.3;
 	imu.accel_noise = 0.5;
 	imu.mag_noise = 0.8;
+	imu.dt = 0.1;
 
 	float accel[3];
 	float mag[3];
@@ -81,12 +82,18 @@ int main() {
 		read_accel(&lsm9ds1, accel);
 		read_mag(&lsm9ds1, mag);
 
-		imu_update(&imu, gyro, accel, mag);
-		float *orientation = matrix_to_arr(quat_to_euler(imu.ekf.state));
+		printf("%f,%f,%f,", gyro[0], gyro[1], gyro[2]);
+		printf("%f,%f,%f,", accel[0], accel[1], accel[2]);
+		printf("%f,%f,%f\n", mag[0], mag[1], mag[2]);
 
-		render_imu(&frame_area, orientation);
+		render_imu(&frame_area, accel);
 
-		sleep_ms(100);
+		// imu_update(&imu, gyro, accel, mag);
+		// float *orientation = matrix_to_arr(quat_to_euler(imu.ekf.state));
+
+		// render_imu(&frame_area, orientation);
+
+		sleep_ms(10);
 	}
 }
 
@@ -111,7 +118,7 @@ void render_imu(struct render_area *frame_area, float *val) {
 	text[1] = concat(text[1], val_y_str);
 	text[2] = concat(text[2], val_z_str);
 
-	printf("%s\n ", text[0]);
+	// printf("%s\n ", text[0]);
 
 	int y = 0;
 	for (uint i = 0 ; i < count_of(text); i++) {
@@ -119,6 +126,10 @@ void render_imu(struct render_area *frame_area, float *val) {
 		y+=8;
 	}
 	render(buf, frame_area);
+
+	free(text[0]);
+	free(text[1]);
+	free(text[2]);
 }
 
 float get_bat_volt() {
