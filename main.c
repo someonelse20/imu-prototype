@@ -3,6 +3,8 @@
 #include "kin_types.h"
 #include "pico/stdlib.h"
 #include <pico/time.h>
+#include <pico/types.h>
+#include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -16,6 +18,8 @@ void render_imu(struct render_area *frame_area, float *val);
 float get_bat_volt();
 
 char* concat(const char *s1, const char *s2);
+
+const float TARGET_DT_S = 0.11;
 
 int main() {
 	// Init IMU type.
@@ -58,11 +62,18 @@ int main() {
 	// Init kinetic.
 	imu_t imu;
 
-	imu.mag_dip = 0.000001;
+	/*
+	   imu.mag_dip = 0.000001;
+	   imu.gyro_noise = 0.3;
+	   imu.accel_noise = 0.5;
+	   imu.mag_noise = 0.8;
+	 */
+	// imu.mag_dip = 54.7;
+	imu.mag_dip = deg_to_rad(54.7);
 	imu.gyro_noise = 0.3;
 	imu.accel_noise = 0.5;
 	imu.mag_noise = 0.8;
-	imu.dt = 0.1;
+	imu.dt = TARGET_DT_S;
 
 	float accel[3];
 	float mag[3];
@@ -71,7 +82,10 @@ int main() {
 
 	imu_init(&imu, accel, mag);
 
+	render_imu(&frame_area, matrix_to_arr(quat_to_euler(imu.ekf.state)));
+
 	while (1) {
+		absolute_time_t timestamp = get_absolute_time();
 		float bat_volt = get_bat_volt();
 
 		float gyro[3];
@@ -82,18 +96,46 @@ int main() {
 		read_accel(&lsm9ds1, accel);
 		read_mag(&lsm9ds1, mag);
 
-		printf("%f,%f,%f,", gyro[0], gyro[1], gyro[2]);
-		printf("%f,%f,%f,", accel[0], accel[1], accel[2]);
-		printf("%f,%f,%f\n", mag[0], mag[1], mag[2]);
+		/*
+		   printf("%f,%f,%f,", gyro[0], gyro[1], gyro[2]);
+		   printf("%f,%f,%f,", accel[0], accel[1], accel[2]);
+		   printf("%f,%f,%f\n", mag[0], mag[1], mag[2]);
 
-		render_imu(&frame_area, accel);
+		   render_imu(&frame_area, accel);
+		 */
 
-		// imu_update(&imu, gyro, accel, mag);
-		// float *orientation = matrix_to_arr(quat_to_euler(imu.ekf.state));
+		/*
+		   float gyro_rad[3];
+		   for (int i = 0; i < 3; i++) {
+		        gyro_rad[i] = deg_to_rad(gyro[i]);
+		   }
+		 */
 
-		// render_imu(&frame_area, orientation);
+		imu_update(&imu, gyro, accel, mag);
 
-		sleep_ms(10);
+		// TODO: fix memory leak here
+		float *orientation = matrix_to_arr(quat_to_euler(imu.ekf.state));
+
+		render_imu(&frame_area, orientation);
+
+		// Calculate timestamp.
+		uint64_t duration_us = absolute_time_diff_us(timestamp, get_absolute_time());
+
+		// printf("%lld\n", duration_us);
+
+		int sleep_time = (TARGET_DT_S * 1000000) - duration_us;
+		// printf("%i\n", sleep_time);
+		sleep_us(sleep_time);
+		/*
+		 */
+
+		/*
+		   sleep_ms(10);
+		   printf("%f\n", (double)absolute_time_diff_us(timestamp, get_absolute_time()) / 1000000);
+
+		   absolute_time_t test_timestamp = get_absolute_time();
+		   printf("%f\n", (double)absolute_time_diff_us(test_timestamp, get_absolute_time()) / 1000000);
+		 */
 	}
 }
 
@@ -141,10 +183,10 @@ float get_bat_volt() {
 
 
 char* concat(const char *s1, const char *s2) {
-    char *result = malloc(strlen(s1) + strlen(s2) + 1); // +1 for the null-terminator
-    // in real code you would check for errors in malloc here
-    strcpy(result, s1);
-    strcat(result, s2);
-    return result;
+	char *result = malloc(strlen(s1) + strlen(s2) + 1); // +1 for the null-terminator
+	// in real code you would check for errors in malloc here
+	strcpy(result, s1);
+	strcat(result, s2);
+	return result;
 }
 
