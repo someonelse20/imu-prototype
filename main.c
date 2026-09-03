@@ -70,10 +70,11 @@ int main() {
 	 */
 	// imu.mag_dip = 54.7;
 	imu.mag_dip = deg_to_rad(54.7);
-	imu.gyro_noise = 0.3;
-	imu.accel_noise = 0.5;
-	imu.mag_noise = 0.8;
+	imu.gyro_noise = 1.3;
+	imu.accel_noise = 1.5;
+	imu.mag_noise = 1.8;
 	imu.dt = TARGET_DT_S;
+	imu.enu = true;
 
 	float accel[3];
 	float mag[3];
@@ -82,7 +83,8 @@ int main() {
 
 	imu_init(&imu, accel, mag);
 
-	render_imu(&frame_area, matrix_to_arr(quat_to_euler(imu.ekf.state)));
+	matrix_t *state_euler = quat_to_euler(imu.ekf.state);
+	render_imu(&frame_area, matrix_to_arr(state_euler));
 
 	while (1) {
 		absolute_time_t timestamp = get_absolute_time();
@@ -113,9 +115,10 @@ int main() {
 
 		imu_update(&imu, gyro, accel, mag);
 
-		// TODO: fix memory leak here
-		float *orientation = matrix_to_arr(quat_to_euler(imu.ekf.state));
+		state_euler = quat_to_euler(imu.ekf.state);
+		float *orientation = matrix_to_arr(state_euler);
 
+		// render_imu(&frame_area, gyro);
 		render_imu(&frame_area, orientation);
 
 		// Calculate timestamp.
