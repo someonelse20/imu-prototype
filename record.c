@@ -74,7 +74,7 @@ int main() {
 		read_accel(&lsm9ds1, accel);
 		read_mag(&lsm9ds1, mag);
 
-		printf("%f", absolute_time_diff_us(timestamp, get_absolute_time()) / 1000.f);
+		printf("%i,", to_ms_since_boot(timestamp));
 		printf("%f,%f,%f,", gyro[0], gyro[1], gyro[2]);
 		printf("%f,%f,%f,", accel[0], accel[1], accel[2]);
 		printf("%f,%f,%f\n", mag[0], mag[1], mag[2]);
