@@ -25,13 +25,16 @@ add_executable(imu
 )
 target_link_libraries(imu libimu kinetic pico_stdlib hardware_adc)
 
-add_executable(bus_scan
-	bus_scan.c
-)
-target_link_libraries(bus_scan pico_stdlib hardware_i2c)
-
-
 pico_enable_stdio_usb(imu 1)
-pico_enable_stdio_uart(imu 1)
+pico_enable_stdio_uart(imu 0)
 
 pico_add_extra_outputs(imu)
+
+add_executable(record
+	record.c
+)
+target_link_libraries(record libimu kinetic pico_stdlib hardware_adc)
+
+pico_enable_stdio_usb(record 1)
+pico_enable_stdio_uart(record 1)
+
